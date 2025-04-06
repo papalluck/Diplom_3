@@ -13,19 +13,16 @@ from selenium.webdriver.support import expected_conditions as EC
 import locators
 
 def generate_random_email():
-    """Генерирует случайный email."""
     letters = string.ascii_lowercase
     random_string = ''.join(random.choice(letters) for i in range(10))
     return f"{random_string}@example.com"
 
 def generate_random_password():
-    """Генерирует случайный пароль."""
     letters = string.ascii_letters + string.digits
     return ''.join(random.choice(letters) for i in range(12))
 
 @pytest.fixture(scope="session")
 def create_user():
-    """Создает тестового пользователя через API."""
     email = generate_random_email()
     password = generate_random_password()
     name = "Test User"
@@ -34,21 +31,21 @@ def create_user():
     auth_token = None  # Store the auth token
 
     try:
-        response = requests.post(create_user_url, json=user_data)  # Используем json= для отправки JSON
+        response = requests.post(create_user_url, json=user_data)
         response.raise_for_status()
         response_data = response.json()
         if response_data and 'accessToken' in response_data:
-                auth_token = response_data['accessToken'].split(' ')[1]  # Extract token
+                auth_token = response_data['accessToken'].split(' ')[1]
                 print(f"Пользователь {email} успешно создан")
-                user_data['auth_token'] = auth_token  # Store token in user_data
-                yield user_data #передаём данные пользователю
+                user_data['auth_token'] = auth_token
+                yield user_data
         else:
             print("Ошибка: не получили access токен")
             yield None
 
     except requests.exceptions.RequestException as e:
         print(f"Ошибка при создании пользователя: {e}")
-        yield None  # Если не получилось создать пользователя
+        yield None
     finally:
         if user_data and 'auth_token' in user_data:
             delete_user_url = f"{config.BASE_URL}/api/auth/user"
@@ -84,12 +81,11 @@ def pytest_addoption(parser):
     )
 
 
-@pytest.fixture(scope="function")  # scope function
-def browser(request, create_user):  # Add create_user as an argument
+@pytest.fixture(scope="function")
+def browser(request, create_user):
     browser_name = request.config.getoption("--browser")
     driver = get_driver(browser_name)
     if create_user:
-        # If create_user is used, we need to login
         driver.get("https://stellarburgers.nomoreparties.site/")
         from pages.login_page import LoginPage
         login_page = LoginPage(driver)
