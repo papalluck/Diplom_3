@@ -3,72 +3,56 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import locators
 import config
+import allure
+from selenium.common.exceptions import TimeoutException
+from pages.Base_page import BasePage
 
 
-class ResetPasswordPage:
+class ResetPasswordPage(BasePage):
     def __init__(self, browser):
-        self.browser = browser
+        super().__init__(browser)
         self.url = config.RESET_PASSWORD_URL
 
+    @allure.step("Открываем страницу сброса пароля")
     def open(self):
-        self.browser.get(self.url)
+        super().open(self.url)
 
+    @allure.step("Вводим email для сброса пароля")
     def enter_email(self, email):
-        # Явное ожидание
-        email_field = WebDriverWait(self.browser, 10).until(
-            EC.element_to_be_clickable(locators.EMAIL_INPUT)
-        )
+        super().send_keys(locators.EMAIL_INPUT, email)
 
-        # Клик по полю
-        email_field.click()
-
-        # Ввод email
-        email_field.send_keys(email)
-
+    @allure.step("Кликаем на кнопку 'Восстановить'")
     def click_restore_button(self):
-        restore_button = WebDriverWait(self.browser, 10).until(
-            EC.element_to_be_clickable(locators.RESTORE_BUTTON)
-        )
-        restore_button.click()
+        super().click(locators.RESTORE_BUTTON)
 
+    @allure.step("Вводим новый пароль")
     def enter_password(self, password):
-        # Явное ожидание
-        password_field = WebDriverWait(self.browser, 10).until(
-            EC.element_to_be_clickable(locators.PASSWORD_INPUT)
-        )
+        super().send_keys(locators.PASSWORD_INPUT, password)
 
-        # Клик по полю
-        password_field.click()
-
-        # Ввод password
-        password_field.send_keys(password)
-
+    @allure.step("Кликаем на кнопку 'Сохранить'")
     def click_save_button(self):
-        save_button = WebDriverWait(self.browser, 10).until(
-            EC.element_to_be_clickable(locators.SAVE_BUTTON)
-        )
-        save_button.click()
+        super().click(locators.SAVE_BUTTON)
 
+    @allure.step("Кликаем на кнопку 'Показать/Скрыть пароль'")
     def click_show_hide_password_button(self):
-        show_hide_button = WebDriverWait(self.browser, 10).until(
-            EC.element_to_be_clickable(locators.SHOW_HIDE_PASSWORD_BUTTON)
-        )
-        show_hide_button.click()
+        super().click(locators.SHOW_HIDE_PASSWORD_BUTTON)
 
+    @allure.step("Проверяем, что поле пароля активно")
     def is_password_field_active(self):
         try:
-            active_password_field = WebDriverWait(self.browser, 10).until(
+            WebDriverWait(self.browser, 10).until(
                 EC.visibility_of_element_located(locators.ACTIVE_PASSWORD_FIELD)
             )
             return True
-        except:
+        except TimeoutException:
             return False
 
+    @allure.step("Проверяем, что кнопка 'Сохранить' отображается")
     def is_save_button_displayed(self):
         try:
             WebDriverWait(self.browser, 10).until(
                 EC.visibility_of_element_located(locators.SAVE_BUTTON)
             )
             return True
-        except:
+        except TimeoutException:
             return False

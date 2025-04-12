@@ -1,87 +1,94 @@
 from selenium.webdriver import ActionChains
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
 import config
 import locators
-import time
+import allure
+from selenium.common.exceptions import TimeoutException, ElementClickInterceptedException
+from pages.Base_page import BasePage
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 
-class MainPage:
+class MainPage(BasePage):
     def __init__(self, browser):
-        self.browser = browser
+        super().__init__(browser)
         self.url = config.BASE_URL
 
+    @allure.step("Открываем главную страницу")
     def open(self):
-        self.browser.get(self.url)
+        super().open(self.url)
 
+    @allure.step("Кликаем на ссылку 'Конструктор'")
     def click_constructor_link(self):
-        constructor_link = WebDriverWait(self.browser, 10).until(
-            EC.element_to_be_clickable(locators.CONSTRUCTOR_LINK)
-        )
-        constructor_link.click()
+        super().click(locators.CONSTRUCTOR_LINK)
 
+    @allure.step("Кликаем на ссылку 'Лента заказов'")
     def click_order_feed_link(self):
-        order_feed_link = WebDriverWait(self.browser, 10).until(
-            EC.element_to_be_clickable(locators.ORDER_FEED_LINK)
-        )
-        order_feed_link.click()
+        super().click(locators.ORDER_FEED_LINK)
 
+    @allure.step("Кликаем на ингредиент")
     def click_ingredient(self):
-        ingredient = WebDriverWait(self.browser, 10).until(
-            EC.element_to_be_clickable(locators.FLUORESCENT_BUN)
-        )
-        ingredient.click()
+        super().click(locators.FLUORESCENT_BUN)
 
+    @allure.step("Кликаем на кнопку 'Закрыть'")
     def click_close_button(self):
-        close_button = WebDriverWait(self.browser, 10).until(
-            EC.element_to_be_clickable(locators.CLOSE_BUTTON)
-        )
-        close_button.click()
+        super().click(locators.CLOSE_BUTTON)
 
+    @allure.step("Получаем значение счетчика ингредиентов")
     def get_ingredient_counter(self):
         try:
             counter = WebDriverWait(self.browser, 10).until(
                 EC.visibility_of_element_located(locators.INGREDIENT_COUNTER)
             )
             return counter.text
-        except:
+        except TimeoutException:
             return None
 
+    @allure.step("Перетаскиваем ингредиент")
     def drag_and_drop_ingredient(self, ingredient_locator):
-        """Перетаскивает ингредиент в область заказа."""
-        source = WebDriverWait(self.browser, 10).until(
-            EC.element_to_be_clickable(ingredient_locator)
-        )
-        target = WebDriverWait(self.browser, 10).until(
-            EC.presence_of_element_located(locators.BURGER_CONSTRUCTOR_BASKET)
-        )
+        try:
+            source = WebDriverWait(self.browser, 10).until(
+                EC.element_to_be_clickable(ingredient_locator)
+            )
+            target = WebDriverWait(self.browser, 10).until(
+                EC.presence_of_element_located(locators.BURGER_CONSTRUCTOR_BASKET)
+            )
 
-        action_chains = ActionChains(self.browser)
-        action_chains.drag_and_drop(source, target).perform()
+            action_chains = ActionChains(self.browser)
+            action_chains.drag_and_drop(source, target).perform()
+        except TimeoutException as e:
+             raise TimeoutException(f"Не удалось перетащить ингредиент за {e}")
 
+    @allure.step("Кликаем на кнопку 'Оформить заказ'")
     def click_checkout_button(self):
-        checkout_button = WebDriverWait(self.browser, 10).until(
-            EC.element_to_be_clickable(locators.CHECKOUT_BUTTON)
-        )
-        checkout_button.click()
+        super().click(locators.CHECKOUT_BUTTON)
 
+    @allure.step("Создаем новый заказ")
     def create_new_order(self):
-        """Создает новый заказ."""
         self.drag_and_drop_ingredient(locators.FLUORESCENT_BUN)
         self.drag_and_drop_ingredient(locators.SAUCE_SPICY_X)
+        self.click_checkout_button()
 
-        checkout_button = WebDriverWait(self.browser, 10).until(
-            EC.element_to_be_clickable(locators.CHECKOUT_BUTTON)
+        WebDriverWait(self.browser, 30).until(
+            EC.text_to_be_present_in_element(locators.CREATED_ORDER_NUMBER, "9999"))
+
+        WebDriverWait(self.browser, 30).until(
+            lambda driver: driver.find_element(*locators.CREATED_ORDER_NUMBER).text != "9999"
         )
-        checkout_button.click()
 
+        return self.get_order_number()
+
+    @allure.step("Получаем номер созданного заказа")
     def get_order_number(self):
-        """Получает номер созданного заказа."""
         order_number_element = self.browser.find_element(*locators.CREATED_ORDER_NUMBER)
         return order_number_element.text
 
-    def close_new_order_popup(self):
-        """Закрывает всплывающее окно о создании заказа."""
-        close_button = WebDriverWait(self.browser, 10).until(
-            EC.element_to_be_clickable(locators.CLOSE_BUTTON_NEW_ORDER)
-        )
-        self.browser.execute_script("arguments[0].click();", close_button)
+    @allure.step("Закрываем всплывающее окно о создании заказа")
+    def close_new_order(self):
+        try:
+            close_button = WebDriverWait(self.browser, 10).until(
+                EC.element_to_be_clickable(locators.CLOSE_BUTTON_NEW_ORDER)
+            )
+            self.browser.execute_script("arguments[0].click();", close_button)
+        except TimeoutException:
+            raise TimeoutException("Не дождались кликабельности кнопки закрытия попапа")
+        except ElementClickInterceptedException:
+            raise ElementClickInterceptedException("Кнопка закрытия перекрыта другим элементом")

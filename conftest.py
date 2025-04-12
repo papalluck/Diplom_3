@@ -6,46 +6,48 @@ from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
 import requests
 import config
-import random
 import string
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-import locators
+import logging
+from helpers import generate_random_string
 
-def generate_random_email():
-    letters = string.ascii_lowercase
-    random_string = ''.join(random.choice(letters) for i in range(10))
-    return f"{random_string}@example.com"
+logger = logging.getLogger(__name__)
 
-def generate_random_password():
-    letters = string.ascii_letters + string.digits
-    return ''.join(random.choice(letters) for i in range(12))
 
 @pytest.fixture(scope="session")
-def create_user():
-    email = generate_random_email()
-    password = generate_random_password()
+def random_email():
+    letters = string.ascii_lowercase
+    return f"{generate_random_string(10, letters)}@example.com"
+
+@pytest.fixture(scope="session")
+def random_password():
+    letters = string.ascii_letters + string.digits
+    return generate_random_string(12, letters)
+
+@pytest.fixture(scope="session")
+def create_user(random_email, random_password):
+    email = random_email
+    password = random_password
     name = "Test User"
     user_data = {"email": email, "password": password, "name": name}
     create_user_url = f"{config.BASE_URL}/api/auth/register"
-    auth_token = None  # Store the auth token
 
     try:
         response = requests.post(create_user_url, json=user_data)
         response.raise_for_status()
         response_data = response.json()
         if response_data and 'accessToken' in response_data:
-                auth_token = response_data['accessToken'].split(' ')[1]
-                print(f"Пользователь {email} успешно создан")
-                user_data['auth_token'] = auth_token
-                yield user_data
+            auth_token = response_data['accessToken']
+            logger.info(f"Пользователь {email} успешно создан")
+            user_data['auth_token'] = auth_token
+            return user_data
         else:
-            print("Ошибка: не получили access токен")
-            yield None
+            logger.warning("Ошибка: не получили access токен")
+            return None
 
     except requests.exceptions.RequestException as e:
-        print(f"Ошибка при создании пользователя: {e}")
-        yield None
+        logger.error(f"Ошибка при создании пользователя: {e}")
+        return None
+
     finally:
         if user_data and 'auth_token' in user_data:
             delete_user_url = f"{config.BASE_URL}/api/auth/user"
@@ -53,9 +55,9 @@ def create_user():
             try:
                 delete_response = requests.delete(delete_user_url, headers=headers)
                 delete_response.raise_for_status()
-                print(f"Пользователь {user_data['email']} успешно удален")
+                logger.info(f"Пользователь {user_data['email']} успешно удален")
             except requests.exceptions.RequestException as e:
-                print(f"Ошибка при удалении пользователя: {e}")
+                logger.error(f"Ошибка при удалении пользователя: {e}")
 
 
 def get_driver(browser_name):
