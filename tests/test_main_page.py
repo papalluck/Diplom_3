@@ -3,7 +3,6 @@ import allure
 from pages.login_page import LoginPage
 from pages.main_page import MainPage
 import config
-import locators
 import logging
 
 logger = logging.getLogger(__name__)
@@ -23,7 +22,7 @@ class TestMainPage:
         login_page.click_login_button()
 
         main_page.click_constructor_link()
-        assert main_page.element_to_be_clickable(locators.ACTIVE_CONSTRUCTOR_LINK), "Не удалось перейти в конструктор"
+        assert main_page.is_constructor_link_active(), "Не удалось перейти в конструктор"
 
     @pytest.mark.main_page
     @allure.title("Переход в ленту заказов")
@@ -51,7 +50,7 @@ class TestMainPage:
         login_page.click_login_button()
 
         main_page.click_ingredient()
-        assert main_page.is_element_visible(locators.INGREDIENT_DETAILS), "Не удалось открыть всплывающее окно ингредиента"
+        assert main_page.is_ingredient_popup_visible(), "Не удалось открыть всплывающее окно ингредиента"
 
     @pytest.mark.main_page
     @allure.title("Закрытие всплывающего окна ингредиента")
@@ -66,7 +65,7 @@ class TestMainPage:
 
         main_page.click_ingredient()
         main_page.click_close_button()
-        assert main_page.is_element_invisible(locators.INGREDIENT_DETAILS), "Не удалось закрыть всплывающее окно ингредиента"
+        assert main_page.is_ingredient_popup_invisible(), "Не удалось закрыть всплывающее окно ингредиента"
 
     @pytest.mark.main_page
     @allure.title("Добавление ингредиента и увеличение счетчика")
@@ -79,9 +78,9 @@ class TestMainPage:
         login_page.enter_password(create_user['password'])
         login_page.click_login_button()
 
-        main_page.drag_and_drop_ingredient(locators.SAUCE_SPICY_X)
-        main_page.drag_and_drop_ingredient(locators.SAUCE_SPICY_X)
-        main_page.drag_and_drop_ingredient(locators.SAUCE_SPICY_X)
+        main_page.drag_and_drop_sauce()
+        main_page.drag_and_drop_sauce()
+        main_page.drag_and_drop_sauce()
 
         counter_value = main_page.get_ingredient_counter()
         assert counter_value == "3", f"Ожидалось значение счетчика 3, получено: {counter_value}"
@@ -98,4 +97,4 @@ class TestMainPage:
         login_page.click_login_button()
 
         main_page.click_checkout_button()
-        assert main_page.is_element_visible(locators.YOUR_ORDER_HAS_BEEN_PREPARED), "Не появилось сообщение об успешном оформлении заказа"
+        assert main_page.is_checkout_successful(), "Не появилось сообщение об успешном оформлении заказа"

@@ -1,27 +1,13 @@
-import pytest
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.firefox.options import Options as FirefoxOptions
-from selenium.webdriver.chrome.service import Service
-from webdriver_manager.chrome import ChromeDriverManager
-import requests
-import config
 import string
 import logging
-from helpers import generate_random_string
+import pytest
+import requests
+import config
+from helpers import random_email, random_password, generate_random_string
+from utils import get_driver
+
 
 logger = logging.getLogger(__name__)
-
-
-@pytest.fixture(scope="session")
-def random_email():
-    letters = string.ascii_lowercase
-    return f"{generate_random_string(10, letters)}@example.com"
-
-@pytest.fixture(scope="session")
-def random_password():
-    letters = string.ascii_letters + string.digits
-    return generate_random_string(12, letters)
 
 @pytest.fixture(scope="session")
 def create_user(random_email, random_password):
@@ -60,23 +46,6 @@ def create_user(random_email, random_password):
                 logger.error(f"Ошибка при удалении пользователя: {e}")
 
 
-def get_driver(browser_name):
-    if browser_name == "chrome":
-        chrome_options = Options()
-        service = Service(ChromeDriverManager().install())
-        driver = webdriver.Chrome(service=service, options=chrome_options)
-
-    elif browser_name == "firefox":
-        firefox_options = FirefoxOptions()
-        driver = webdriver.Firefox(options=firefox_options)
-    else:
-        raise ValueError(f"Неподдерживаемый браузер: {browser_name}")
-
-    driver.implicitly_wait(10)
-    driver.maximize_window()
-    return driver
-
-
 def pytest_addoption(parser):
     parser.addoption(
         "--browser", action="store", default="chrome", help="Браузер для запуска тестов (chrome или firefox)"
@@ -87,15 +56,6 @@ def pytest_addoption(parser):
 def browser(request, create_user):
     browser_name = request.config.getoption("--browser")
     driver = get_driver(browser_name)
-    if create_user:
-        driver.get("https://stellarburgers.nomoreparties.site/")
-        from pages.login_page import LoginPage
-        login_page = LoginPage(driver)
-        login_page.open()
-        login_page.enter_email(create_user['email'])
-        login_page.enter_password(create_user['password'])
-        login_page.click_login_button()
-    else:
-         driver.get("https://stellarburgers.nomoreparties.site/")
+    driver.get(config.BASE_URL)
     yield driver
     driver.quit()

@@ -3,7 +3,6 @@ import allure
 from pages.login_page import LoginPage
 from pages.personal_account_page import PersonalAccountPage
 import config
-import locators
 import logging
 
 
@@ -41,7 +40,7 @@ class TestPersonalAccount:
         assert personal_account_page.is_url_correct(config.ACCOUNT_URL), "Не удалось перейти в личный кабинет"
 
         personal_account_page.click_order_history_link()
-        assert personal_account_page.is_element_visible(locators.ORDER_HISTORY_LINK), "Не удалось перейти в историю заказов"
+        assert personal_account_page.is_order_history_link_displayed(), "Не удалось перейти в историю заказов"
 
     @pytest.mark.personal_account
     @allure.title("Выход из аккаунта")
