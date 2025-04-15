@@ -25,6 +25,7 @@ class LoginPage(BasePage):
     @allure.step("Кликаем на кнопку 'Войти'")
     def click_login_button(self):
         self.click(locators.SIGN_IN_BUTTON)
+
     @allure.step("Проверяем, что мы на странице забытого пароля")
     def is_forgot_password_page(self):
         return self.is_url_correct(config.FORGOT_PASSWORD_URL)
@@ -40,7 +41,6 @@ class LoginPage(BasePage):
     def click_personal_account_button(self):
         self.click(locators.PERSONAL_ACCOUNT)
 
-
     @allure.step("Кликаем на кнопку 'Восстановить пароль'")
     def click_recover_password_button(self):
         self.click(locators.BUTTON_RECOVER_PASSWORD)
@@ -52,5 +52,4 @@ class LoginPage(BasePage):
             self.click(locators.LOGOUT_BUTTON)
             self.is_url_correct(config.LOGIN_URL)
         except TimeoutException as e:
-            print(f"Ошибка при выходе из аккаунта: {e}")
-            raise
+            raise e

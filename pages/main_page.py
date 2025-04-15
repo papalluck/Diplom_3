@@ -1,5 +1,3 @@
-import re
-from selenium.webdriver import ActionChains
 import config
 import locators
 import allure
@@ -42,22 +40,11 @@ class MainPage(BasePage):
 
     @allure.step("Перетаскиваем булку")
     def drag_and_drop_bun(self):
-        self.drag_and_drop_ingredient(locators.FLUORESCENT_BUN)
+        self.drag_and_drop_ingredient(locators.FLUORESCENT_BUN, locators.BURGER_CONSTRUCTOR_BASKET)
 
     @allure.step("Перетаскиваем соус")
     def drag_and_drop_sauce(self):
-        self.drag_and_drop_ingredient(locators.SAUCE_SPICY_X)
-
-    @allure.step("Перетаскиваем ингредиент")
-    def drag_and_drop_ingredient(self, ingredient_locator):
-        try:
-            source = self.find_element(ingredient_locator)
-            target = self.find_element(locators.BURGER_CONSTRUCTOR_BASKET)
-
-            action_chains = ActionChains(self.browser)
-            action_chains.drag_and_drop(source, target).perform()
-        except TimeoutException as e:
-            raise TimeoutException(f"Не удалось перетащить ингредиент за {e}")
+        self.drag_and_drop_ingredient(locators.SAUCE_SPICY_X, locators.BURGER_CONSTRUCTOR_BASKET)
 
     @allure.step("Кликаем на кнопку 'Оформить заказ'")
     def click_checkout_button(self):
@@ -74,7 +61,7 @@ class MainPage(BasePage):
         self.click_checkout_button()
         self.wait_for_order_number_to_load()
         order_number = self.get_order_number()
-        self.close_new_order()
+        self.close_new_order_popup()
         return order_number
 
     @allure.step("Ожидаем, пока номер заказа изменится")
@@ -87,14 +74,8 @@ class MainPage(BasePage):
         return order_number_element.text
 
     @allure.step("Закрываем всплывающее окно о создании заказа")
-    def close_new_order(self):
-        try:
-            close_button = self.find_element(locators.CLOSE_BUTTON_NEW_ORDER)
-            self.browser.execute_script("arguments[0].click();", close_button)
-        except TimeoutException:
-            raise TimeoutException("Не дождались кликабельности кнопки закрытия попапа")
-        except ElementClickInterceptedException:
-            raise ElementClickInterceptedException("Кнопка закрытия попапа перекрыта другим элементом")
+    def close_new_order_popup(self):
+        self.close_new_order(locators.CLOSE_BUTTON_NEW_ORDER)
 
     @allure.step("Кликаем на кнопку 'Личный кабинет'")
     def click_personal_account_button(self):

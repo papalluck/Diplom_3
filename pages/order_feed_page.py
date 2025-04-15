@@ -41,10 +41,10 @@ class OrderFeedPage(BasePage):
             raise TimeoutException(f"Не удалось получить номер заказа {e}")
 
     @allure.step("Получаем список заказов в работе")
-    def get_orders_in_progress(self):
+    def get_orders_in_progress(self, locator):
         try:
-            self.wait_for_element_visibility(locators.SECTION_IS_IN_PROGRESS)
-            orders_in_progress = self.find_elements(locators.SECTION_IS_IN_PROGRESS)
+            self.wait_for_element_visibility(locator)
+            orders_in_progress = self.find_elements(locator)
             return [order.text for order in orders_in_progress]
         except TimeoutException as e:
             raise TimeoutException(f"Не удалось получить список заказов в работе {e}")
@@ -62,17 +62,14 @@ class OrderFeedPage(BasePage):
         return self.is_element_visible(locators.COMPLETED_TODAY_COUNTER)
 
     @allure.step("Проверяем, что заказ с номером {order_number} находится в списке 'В работе'")
-    def is_order_present_in_progress(self, order_number):
-        orders_in_progress = self.get_orders_in_progress()
+    def is_order_present_in_progress(self, locator, order_number):
+        orders_in_progress = self.get_orders_in_progress(locator)
         return any(order_number in order for order in orders_in_progress)
 
     @allure.step("Ожидаем, пока заказ с номером {order_number} появится в списке 'В работе'")
-    def wait_for_order_in_progress(self, order_number, timeout=30):
-        try:
-            WebDriverWait(self.browser, timeout).until(
-                lambda driver: self.is_order_present_in_progress(order_number)
-            )
-            return True
-        except TimeoutException:
-            self.attach_screenshot()
-            raise TimeoutException(f"Не дождались появления заказа с номером {order_number} в списке 'В работе' за {timeout} секунд")
+    def wait_for_order_to_be_in_progress(self, order_number):
+        self.wait_for_order_in_progress(locators.SECTION_IS_IN_PROGRESS, order_number)
+
+    @allure.step("Проверяем, что заказ с номером {order_number} отображается в списке 'В работе'")
+    def is_order_in_progress_displayed(self, order_number):
+        return self.is_order_present_in_progress(locators.SECTION_IS_IN_PROGRESS, order_number)

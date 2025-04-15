@@ -123,6 +123,6 @@ class TestOrderFeed:
 
         main_page.click_order_feed_link()
 
-        order_feed_page.wait_for_order_in_progress(order_number)
+        order_feed_page.wait_for_order_to_be_in_progress(order_number)
 
-        assert order_feed_page.is_order_present_in_progress(order_number), f"Заказ с номером {order_number} не найден в списке 'В работе'"
+        assert order_feed_page.is_order_in_progress_displayed(order_number), f"Заказ с номером {order_number} не найден в списке 'В работе'"

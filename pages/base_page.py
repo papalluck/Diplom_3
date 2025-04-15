@@ -1,8 +1,9 @@
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import allure
-from selenium.common.exceptions import TimeoutException
+from selenium.common.exceptions import TimeoutException, ElementClickInterceptedException
 import re
+from selenium.webdriver import ActionChains
 
 
 class BasePage:
@@ -72,6 +73,7 @@ class BasePage:
             self.attach_screenshot()
             raise TimeoutException(f"Элемент {locator} не кликабелен на странице за {timeout} секунд")
 
+    @allure.step("Делаем скриншот и добавляем его в отчет Allure")
     def attach_screenshot(self):
         allure.attach(
             self.browser.get_screenshot_as_png(),
@@ -79,6 +81,7 @@ class BasePage:
             attachment_type=allure.attachment_type.PNG
         )
 
+    @allure.step("Находим элемент: {locator}")
     def find_element(self, locator, timeout=10):
         try:
             element = WebDriverWait(self.browser, timeout).until(
@@ -89,6 +92,7 @@ class BasePage:
             self.attach_screenshot()
             raise TimeoutException(f"Элемент {locator} не найден на странице за {timeout} секунд")
 
+    @allure.step("Находим элементы: {locator}")
     def find_elements(self, locator, timeout=10):
         try:
             elements = WebDriverWait(self.browser, timeout).until(
@@ -152,3 +156,44 @@ class BasePage:
         except TimeoutException:
             self.attach_screenshot()
             raise TimeoutException(f"Не дождались, пока текст элемента {locator} будет соответствовать регулярному выражению '{regex}' за {timeout} секунд")
+
+    @allure.step("Закрываем всплывающее окно")
+    def close_new_order(self, close_button_locator):
+        try:
+            close_button = self.find_element(close_button_locator)
+            self.browser.execute_script("arguments[0].click();", close_button)
+        except TimeoutException:
+            self.attach_screenshot()
+            raise TimeoutException("Не дождались кликабельности кнопки закрытия попапа")
+        except ElementClickInterceptedException:
+            self.attach_screenshot()
+            raise ElementClickInterceptedException("Кнопка закрытия попапа перекрыта другим элементом")
+
+    @allure.step("Проверяем, что заказ с номером {order_number} отображается в списке 'В работе'")
+    def is_order_present_in_progress(self, locator, order_number):
+        orders_in_progress = self.find_elements(locator)
+        return any(order_number in order.text for order in orders_in_progress)
+
+    @allure.step("Ожидаем, пока заказ с номером {order_number} появится в списке 'В работе'")
+    def wait_for_order_in_progress(self, locator, order_number, timeout=30):
+        try:
+            WebDriverWait(self.browser, timeout).until(
+                lambda driver: self.is_order_present_in_progress(locator, order_number)
+            )
+            return True
+        except TimeoutException:
+            self.attach_screenshot()
+            raise TimeoutException(
+                f"Не дождались появления заказа с номером {order_number} в списке 'В работе' за {timeout} секунд")
+
+    @allure.step("Перетаскиваем ингредиент")
+    def drag_and_drop_ingredient(self, ingredient_locator, target_locator):
+        try:
+            source = self.find_element(ingredient_locator)
+            target = self.find_element(target_locator)
+
+            action_chains = ActionChains(self.browser)
+            action_chains.drag_and_drop(source, target).perform()
+        except TimeoutException as e:
+            self.attach_screenshot()
+            raise TimeoutException(f"Не удалось перетащить ингредиент за {e}")
