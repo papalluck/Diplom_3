@@ -45,6 +45,7 @@ class LoginPage(BasePage):
     def click_recover_password_button(self):
         self.click(locators.BUTTON_RECOVER_PASSWORD)
 
+
     @allure.step("Выходим из аккаунта")
     def logout(self):
         try:

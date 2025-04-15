@@ -7,7 +7,6 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-
 @allure.feature("Основная страница")
 class TestMainPage:
     @pytest.mark.main_page
