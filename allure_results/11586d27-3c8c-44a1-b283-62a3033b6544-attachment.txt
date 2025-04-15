@@ -1,0 +1,1 @@
+[1m[31mERROR   [0m conftest:conftest.py:46 Ошибка при удалении пользователя: 403 Client Error: Forbidden for url: https://stellarburgers.nomoreparties.site/api/auth/user
